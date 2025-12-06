@@ -44,13 +44,13 @@ Parcours complet de 10 niveaux d’exploitation sur VM : analyse de binaires, co
 	<tr>
 		<td align="center">
 			<a href="https://github.com/cduffaut" target="_blank">
-				<img src="https://img.icons8.com/?size=100&id=tZuAOUGm9AuS&format=png&color=000000" width="40" alt="GitHub Icon"/><br>
+				<img src="https://avatars.githubusercontent.com/u/119802570?v=4" width="40" alt="GitHub Icon"/><br>
 				<b>Cécile</b>
 			</a>
 		</td>
 		<td align="center">
 			<a href="https://github.com/aceyzz" target="_blank">
-				<img src="https://img.icons8.com/?size=100&id=tZuAOUGm9AuS&format=png&color=000000" width="40" alt="GitHub Icon"/><br>
+				<img src="https://avatars.githubusercontent.com/u/112768475?v=4" width="40" alt="GitHub Icon"/><br>
 				<b>Cédric</b>
 			</a>
 		</td>
