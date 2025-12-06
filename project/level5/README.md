@@ -54,7 +54,7 @@ Reconstruisons le binaire, et allons faire un petit objdump pour voir ce qu'il e
 [Le resultat de objdump](./source/objdump.txt)  
 [Code source reconstruit](./source/level5.c) via [Boomerang](https://dogbolt.org/) (juste pour un apercu rapide)
 
-On voit bien qu'un printf est appelé sans format specifier, ce qui nous permet [une attaque de format string](https://owasp.org/www-community/attacks/Format_string_attack).  
+On voit bien qu'un `printf` est appelé sans format specifier, ce qui nous permet [une attaque de format string](https://owasp.org/www-community/attacks/Format_string_attack).  
 On voit aussi que dans la fonction `<o>` a un call system vers `/bin/sh` (ligne 142 de l'objdump).  
 
 Notre but est donc clair : **écrire l’adresse de la fonction o() dans l’entrée GOT de exit, grâce à l’attaque de format string, pour que l’appel à `exit()` exécute en réalité `/bin/sh`**
@@ -80,26 +80,26 @@ OFFSET   TYPE              VALUE
 ```
 
 Les adresses qui nous intéressent :
-	•	system@GOT : 0x08049830
-	•	_exit@GOT  : 0x08049828
-	•	exit@GOT   : 0x08049838  ← cible de notre attaque
+- system@GOT : `0x08049830`
+- _exit@GOT  : `0x08049828`
+- exit@GOT   : `0x08049838`  ← cible de notre attaque
 
-Notre objectif est clair : remplacer l’adresse contenue dans exit@GOT par celle de la fonction `o()`.
-Ainsi, lorsque le programme appellera `exit(1)`, il exécutera en réalité `/bin/sh`.
+Notre objectif est clair : remplacer l’adresse contenue dans `exit@GOT` par celle de la fonction `o()`  
+Ainsi, lorsque le programme appellera `exit(1)`, il exécutera en réalité `/bin/sh`  
 
 <br>
 
 ## Construction du payload
 
-- On commence par placer l’adresse de `exit@GOT` au début de notre entrée, en format little endian (ordre des octets inversé) :
-    • Par exemple, `0x08049838` devient : `\x38\x98\x04\x08`
-- Quand la fonction `printf` s’exécute, elle affiche d’abord ces 4 octets. Ils comptent dans le nombre total de caractères affichés.
-- Notre objectif est que, au moment où `%n` est utilisé, le compteur de caractères affichés par `printf` soit exactement égal à l’adresse de la fonction `o` (`0x080484a4`, soit 134513828 en décimal).
-- Pour cela, on ajoute `%134513824d` dans la chaîne de format. Comme les 4 premiers octets ont déjà été affichés, on complète avec 134513824 caractères pour atteindre le total voulu.
+- On commence par placer l’adresse de `exit@GOT` au début de notre entrée, en format little endian (ordre des octets inversé) :  
+    • Par exemple, `0x08049838` devient : `\x38\x98\x04\x08`  
+- Quand la fonction `printf` s’exécute, elle affiche d’abord ces 4 octets. Ils comptent dans le nombre total de caractères affichés  
+- Notre objectif est que, au moment où `%n` est utilisé, le compteur de caractères affichés par `printf` soit exactement égal à l’adresse de la fonction `o` (`0x080484a4`, soit 134513828 en décimal)  
+- Pour cela, on ajoute `%134513824d` dans la chaîne de format. Comme les 4 premiers octets ont déjà été affichés, on complète avec 134513824 caractères pour atteindre le total voulu  
 - Ensuite, on utilise `%4$n` :
-    • `%4$` indique à `printf` d’utiliser le 4ᵉ argument comme adresse où écrire la valeur du compteur.
-    • Ici, le 4ᵉ argument correspond à l’adresse que nous avons placée au début (`0x08049838`).
-    • `%n` va donc écrire la valeur du compteur (134513828) à cette adresse, ce qui permet de modifier le comportement du programme.
+    • `%4$` indique à `printf` d’utiliser le 4ᵉ argument comme adresse où écrire la valeur du compteur  
+    • Ici, le 4ᵉ argument correspond à l’adresse que nous avons placée au début (`0x08049838`)  
+    • `%n` va donc écrire la valeur du compteur (134513828) à cette adresse, ce qui permet de modifier le comportement du programme  
 
 <br>
 

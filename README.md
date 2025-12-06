@@ -18,7 +18,7 @@ Parcours complet de 10 niveaux d’exploitation sur VM : analyse de binaires, co
 
 - [Level 5](./project/level5) - `Format string vulnerability` menant à l’exécution non prévue de code  
 - [Level 6](./project/level6) - `Heap buffer overflow` menant à la corruption d’un pointeur de fonction et à l’exécution non prévue de code  
-<!-- - [Level 7](./project/level7) -->
+- [Level 7](./project/level7) - `Heap buffer overflow` menant au détournement d’une entrée GOT et à l’exécution non prévue de code  
 <!-- - [Level 8](./project/level8) -->
 <!-- - [Level 9](./project/level9) -->
 

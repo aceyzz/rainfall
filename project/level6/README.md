@@ -71,8 +71,8 @@ int main(int argc, char **argv) {
 
 On a donc : 
 - un buffer de taille 64 sur la heap  
-- un pointeur sur fonction (mem2) qui pointe sur m() dans la heap aussi  
-- un strcpy sans controle de taille qui copie argv[1] dans le buffer de 64 octets  
+- un pointeur sur fonction (`mem2`) qui pointe sur `m()` dans la heap aussi  
+- un `strcpy` sans controle de taille qui copie `argv[1]` dans le buffer de 64 octets  
 
 Let's go pour un heap overflow, et remplacer `m()` par `n()` dans le pointeur de fonction `mem2` pour lancer le call `system(...)` et voir ce qu'il fait
 
@@ -108,7 +108,7 @@ Toujours pareil pour l'adresse de la fonction `n()`, on la met en little-endian.
 
 Avec python evidemment, ca peut ressembler à ca : 
 ```
-./level6 $(python -c 'print "A"*72 + "\x54\x84\x04\x08"')
+python -c 'print "A"*72 + "\x54\x84\x04\x08"'
 ```
 
 <br>
