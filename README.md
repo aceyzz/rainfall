@@ -16,6 +16,11 @@ Parcours complet de 10 niveaux d’exploitation sur VM : analyse de binaires, co
 
 ## Index des niveaux
 
+- [Level 0](./project/level0) - `Simple input validation` menant à la récupération du mot de passe  
+- [Level 1](./project/level1) - `Basic buffer overflow` : dépassement de tampon via gets() permettant d’écraser l’adresse de retour
+- [Level 2](./project/level2) - `Heap-based buffer overflow` : exploitation d’un débordement de tampon pour exécuter du code sur la heap  
+- [Level 3](./project/level3) - `Format string vulnerability` : exploitation d’un format string pour écrire une valeur précise en mémoire  
+- [Level 4](./project/level4) - `Format string vulnerability` permettant d’écrire une valeur arbitraire en mémoire pour déclencher l’exécution d’un shell
 - [Level 5](./project/level5) - `Format string vulnerability` menant à l’exécution non prévue de code  
 - [Level 6](./project/level6) - `Heap buffer overflow` menant à la corruption d’un pointeur de fonction et à l’exécution non prévue de code  
 - [Level 7](./project/level7) - `Heap buffer overflow` menant au détournement d’une entrée GOT et à l’exécution non prévue de code  
@@ -32,9 +37,7 @@ Parcours complet de 10 niveaux d’exploitation sur VM : analyse de binaires, co
 
 ## Grade
 
-> En cours de construction
-
-<!-- <img src="./utils/100.png" alt="Grade" width="150"> -->
+<img src="./utils/108.png" alt="Grade" width="150">
 
 <br>
 
